@@ -11,12 +11,8 @@ export default function Home() {
       
       <div className="z-10 w-full max-w-4xl space-y-12">
         <header className="text-center space-y-4 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            Precision Resume Scoring
-          </div>
           <h1 className="text-5xl sm:text-7xl font-headline font-black text-white tracking-tighter">
-            Resume <span className="text-zinc-500">Scoring</span> System
+            Resume System
           </h1>
         </header>
 

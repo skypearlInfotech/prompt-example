@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { scoreResume, type ScoreResumeOutput } from '@/ai/flows/score-resume-flow';
+import axios from "axios";
 
 const validationSchema = Yup.object().shape({
   inputType: Yup.string().oneOf(['text', 'file']).required(),
@@ -78,12 +79,15 @@ export function FormifyForm() {
           }
         }
 
-        const aiResult = await scoreResume({
-          resumeText: finalResume,
-          jobDescriptionText: finalJobDescription,
-        });
+        const response = await axios.post(
+          "http://localhost:8000/analyze", // change to your full backend URL if needed
+          {
+            resume: finalResume,
+            job_description: finalJobDescription,
+          }
+        );
 
-        setResult(aiResult);
+        setResult(response.data);
         toast({
           title: "Analysis Complete",
           description: "Your resume score has been calculated.",
