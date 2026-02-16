@@ -1,8 +1,12 @@
+import os
 from openai import OpenAI
 import json
 from prompts import JOB_EXTRACTION_PROMPT, RESUME_EXTRACTION_PROMPT
+from dotenv import load_dotenv
 
-client = OpenAI(api_key="API_KEY")
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def extract_job_data(job_text):
     response = client.chat.completions.create(
