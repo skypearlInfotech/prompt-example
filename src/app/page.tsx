@@ -18,9 +18,6 @@ export default function Home() {
           <h1 className="text-5xl sm:text-7xl font-headline font-black text-white tracking-tighter">
             Resume <span className="text-zinc-500">Scoring</span> System
           </h1>
-          <p className="text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto font-body">
-            Quantify your application's relevance. Upload your resume and job requirements for an instant breakdown of your match score.
-          </p>
         </header>
 
         <section className="relative">
