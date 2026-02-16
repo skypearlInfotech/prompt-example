@@ -1,10 +1,9 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Formify API Caller',
-  description: 'A modern tool for analyzing applications using AI and PDF text extraction.',
+  title: 'Resume Scoring System',
+  description: 'AI-powered tool for scoring resumes against job descriptions.',
 };
 
 export default function RootLayout({
@@ -19,7 +18,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased selection:bg-accent/30 selection:text-white">
+      <body className="font-body antialiased selection:bg-primary/30 selection:text-white">
         {children}
       </body>
     </html>

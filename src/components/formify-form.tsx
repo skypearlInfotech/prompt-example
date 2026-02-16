@@ -1,10 +1,9 @@
-
 "use client";
 
 import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { FileText, Upload, Send, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { FileText, Upload, Send, Loader2, AlertCircle, CheckCircle2, TrendingUp, Award, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -13,6 +12,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { extractTextFromPdf } from '@/lib/pdf-parser';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 
 const validationSchema = Yup.object().shape({
   inputType: Yup.string().oneOf(['text', 'file']).required(),
@@ -38,10 +47,20 @@ const validationSchema = Yup.object().shape({
   }),
 });
 
+interface ScoringResult {
+  overallScore: number;
+  categories: {
+    name: string;
+    score: number;
+    feedback: string;
+  }[];
+  recommendations: string[];
+}
+
 export function FormifyForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [apiResponse, setApiResponse] = useState<any>(null);
+  const [result, setResult] = useState<ScoringResult | null>(null);
 
   const formik = useFormik({
     initialValues: {
@@ -54,13 +73,13 @@ export function FormifyForm() {
     validationSchema,
     onSubmit: async (values) => {
       setIsSubmitting(true);
-      setApiResponse(null);
+      setResult(null);
       try {
         let finalJobDescription = values.jobDescriptionText;
         let finalResume = values.resumeText;
 
         if (values.inputType === 'file') {
-          toast({ title: "Processing PDFs", description: "Extracting text from your files..." });
+          toast({ title: "Processing PDFs", description: "Analyzing your files..." });
           if (values.jobDescriptionFile) {
             finalJobDescription = await extractTextFromPdf(values.jobDescriptionFile);
           }
@@ -69,23 +88,28 @@ export function FormifyForm() {
           }
         }
 
-        // Mock API Call
-        const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: 'Formify Submission',
-            jobDescription: finalJobDescription,
-            resume: finalResume,
-            processedAt: new Date().toISOString(),
-          }),
-        });
+        // Simulating AI Analysis and Scoring
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        const data = await response.json();
-        setApiResponse(data);
+        const mockResult: ScoringResult = {
+          overallScore: 84,
+          categories: [
+            { name: "Technical Proficiency", score: 92, feedback: "Excellent alignment with stack requirements." },
+            { name: "Experience Level", score: 85, feedback: "Senior roles mentioned match well." },
+            { name: "Educational Background", score: 70, feedback: "Degree matches, but certifications could be improved." },
+            { name: "Soft Skills", score: 88, feedback: "Leadership and teamwork clearly demonstrated." }
+          ],
+          recommendations: [
+            "Add more specific metrics to your previous work achievements.",
+            "Consider highlighting Cloud (AWS/Azure) experience more prominently.",
+            "Update your summary to include the specific keywords found in the JD."
+          ]
+        };
+
+        setResult(mockResult);
         toast({
-          title: "Success!",
-          description: "Your data has been processed successfully.",
+          title: "Analysis Complete",
+          description: "Your resume score has been calculated.",
         });
       } catch (error: any) {
         toast({
@@ -113,189 +137,207 @@ export function FormifyForm() {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto shadow-2xl border-purple-900/20 bg-card/80 backdrop-blur-sm animate-fade-in">
-      <CardHeader>
-        <CardTitle className="text-3xl font-headline font-bold text-center bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-          Analyze Application
-        </CardTitle>
-        <CardDescription className="text-center text-muted-foreground">
-          Select your input method and provide the details below.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={formik.handleSubmit} className="space-y-8">
-          <div className="space-y-4">
-            <Label className="text-lg font-semibold text-foreground/90 flex items-center gap-2">
-              <span className="w-1.5 h-6 bg-accent rounded-full" />
-              Input Method
-            </Label>
-            <RadioGroup
-              value={formik.values.inputType}
-              onValueChange={(val) => formik.setFieldValue('inputType', val)}
-              className="flex flex-col sm:flex-row gap-4"
+    <div className="space-y-8 animate-fade-in">
+      <Card className="w-full max-w-2xl mx-auto shadow-2xl border-white/5 bg-zinc-950/50 backdrop-blur-xl">
+        <CardHeader>
+          <CardTitle className="text-3xl font-headline font-bold text-center text-white">
+            Analyze Application
+          </CardTitle>
+          <CardDescription className="text-center text-zinc-500">
+            Select your input method and provide the details below.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={formik.handleSubmit} className="space-y-8">
+            <div className="space-y-4">
+              <Label className="text-sm font-semibold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                Input Method
+              </Label>
+              <RadioGroup
+                value={formik.values.inputType}
+                onValueChange={(val) => formik.setFieldValue('inputType', val)}
+                className="flex flex-col sm:flex-row gap-4"
+              >
+                <div className={cn(
+                  "flex-1 flex items-center justify-center p-4 rounded-xl border-2 transition-all cursor-pointer",
+                  formik.values.inputType === 'text' ? "border-white bg-white/5 ring-1 ring-white/20" : "border-white/5 hover:border-white/20"
+                )} onClick={() => formik.setFieldValue('inputType', 'text')}>
+                  <RadioGroupItem value="text" id="text" className="sr-only" />
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <FileText className={cn("w-6 h-6", formik.values.inputType === 'text' ? "text-white" : "text-zinc-600")} />
+                    <span className={cn("font-medium", formik.values.inputType === 'text' ? "text-white" : "text-zinc-600")}>Manual Text</span>
+                  </div>
+                </div>
+
+                <div className={cn(
+                  "flex-1 flex items-center justify-center p-4 rounded-xl border-2 transition-all cursor-pointer",
+                  formik.values.inputType === 'file' ? "border-white bg-white/5 ring-1 ring-white/20" : "border-white/5 hover:border-white/20"
+                )} onClick={() => formik.setFieldValue('inputType', 'file')}>
+                  <RadioGroupItem value="file" id="file" className="sr-only" />
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <Upload className={cn("w-6 h-6", formik.values.inputType === 'file' ? "text-white" : "text-zinc-600")} />
+                    <span className={cn("font-medium", formik.values.inputType === 'file' ? "text-white" : "text-zinc-600")}>PDF Upload</span>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-6">
+              {formik.values.inputType === 'text' ? (
+                <div className="space-y-6 animate-in fade-in duration-500">
+                  <div className="space-y-2">
+                    <Label htmlFor="jobDescriptionText" className="text-xs font-medium text-zinc-500 uppercase">Job Description</Label>
+                    <Textarea
+                      id="jobDescriptionText"
+                      name="jobDescriptionText"
+                      placeholder="Paste the job description here..."
+                      className="min-h-[120px] bg-black border-white/10 focus:border-white transition-colors text-white"
+                      value={formik.values.jobDescriptionText}
+                      onChange={formik.handleChange}
+                    />
+                    {formik.errors.jobDescriptionText && formik.touched.jobDescriptionText && (
+                      <p className="text-red-500 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {formik.errors.jobDescriptionText}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="resumeText" className="text-xs font-medium text-zinc-500 uppercase">Resume Content</Label>
+                    <Textarea
+                      id="resumeText"
+                      name="resumeText"
+                      placeholder="Paste your resume content here..."
+                      className="min-h-[120px] bg-black border-white/10 focus:border-white transition-colors text-white"
+                      value={formik.values.resumeText}
+                      onChange={formik.handleChange}
+                    />
+                    {formik.errors.resumeText && formik.touched.resumeText && (
+                      <p className="text-red-500 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {formik.errors.resumeText}</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6 animate-in fade-in duration-500">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium text-zinc-500 uppercase">Job Description PDF</Label>
+                    <input type="file" id="jobDescriptionFile" accept=".pdf" className="hidden" onChange={(e) => handleFileChange(e, 'jobDescriptionFile')} />
+                    <label htmlFor="jobDescriptionFile" className={cn(
+                      "flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all",
+                      formik.values.jobDescriptionFile ? "border-zinc-400 bg-white/5" : "border-white/5 hover:border-white/20 bg-black"
+                    )}>
+                      {formik.values.jobDescriptionFile ? (
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <CheckCircle2 className="w-5 h-5 text-zinc-400" />
+                          <span className="text-sm">{(formik.values.jobDescriptionFile as any).name}</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                          <Upload className="w-6 h-6 text-zinc-600" />
+                          <p className="text-xs text-zinc-500">Upload JD PDF</p>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium text-zinc-500 uppercase">Resume PDF</Label>
+                    <input type="file" id="resumeFile" accept=".pdf" className="hidden" onChange={(e) => handleFileChange(e, 'resumeFile')} />
+                    <label htmlFor="resumeFile" className={cn(
+                      "flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all",
+                      formik.values.resumeFile ? "border-zinc-400 bg-white/5" : "border-white/5 hover:border-white/20 bg-black"
+                    )}>
+                      {formik.values.resumeFile ? (
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <CheckCircle2 className="w-5 h-5 text-zinc-400" />
+                          <span className="text-sm">{(formik.values.resumeFile as any).name}</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                          <Upload className="w-6 h-6 text-zinc-600" />
+                          <p className="text-xs text-zinc-500">Upload Resume PDF</p>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full h-14 bg-white hover:bg-zinc-200 text-black font-bold text-lg rounded-xl shadow-xl transition-all hover:scale-[1.01] active:scale-[0.98]"
             >
-              <div className={cn(
-                "flex-1 flex items-center justify-center p-4 rounded-xl border-2 transition-all cursor-pointer",
-                formik.values.inputType === 'text' ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:border-accent/50"
-              )} onClick={() => formik.setFieldValue('inputType', 'text')}>
-                <RadioGroupItem value="text" id="text" className="sr-only" />
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <FileText className={cn("w-6 h-6", formik.values.inputType === 'text' ? "text-accent" : "text-muted-foreground")} />
-                  <span className="font-medium">Manual Text</span>
+              {isSubmitting ? (
+                <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Calculating Score...</>
+              ) : (
+                <><TrendingUp className="mr-2 h-5 w-5" /> Score Resume</>
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {result && (
+        <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-700">
+          <Card className="border-white/10 bg-zinc-950 shadow-2xl overflow-hidden">
+            <CardHeader className="bg-white/[0.02] border-b border-white/5 pb-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-1 text-center md:text-left">
+                  <CardTitle className="text-2xl font-bold flex items-center gap-2 justify-center md:justify-start">
+                    <Award className="w-6 h-6 text-zinc-400" /> Analysis Result
+                  </CardTitle>
+                  <CardDescription>Matching performance across key categories</CardDescription>
+                </div>
+                <div className="flex flex-col items-center bg-white/5 px-8 py-4 rounded-2xl border border-white/10">
+                  <span className="text-4xl font-black text-white">{result.overallScore}%</span>
+                  <span className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Match Score</span>
                 </div>
               </div>
+            </CardHeader>
+            <CardContent className="pt-8">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-white/5">
+                    <TableHead className="text-zinc-400 font-semibold w-[200px]">Category</TableHead>
+                    <TableHead className="text-zinc-400 font-semibold">Performance</TableHead>
+                    <TableHead className="text-zinc-400 font-semibold text-right">Score</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {result.categories.map((cat, idx) => (
+                    <TableRow key={idx} className="border-white/5 hover:bg-white/[0.02]">
+                      <TableCell className="font-medium text-white">
+                        <div className="flex flex-col">
+                          <span>{cat.name}</span>
+                          <span className="text-xs text-zinc-500 font-normal mt-0.5">{cat.feedback}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Progress value={cat.score} className="h-2 bg-zinc-900" />
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-zinc-300">{cat.score}%</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-              <div className={cn(
-                "flex-1 flex items-center justify-center p-4 rounded-xl border-2 transition-all cursor-pointer",
-                formik.values.inputType === 'file' ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:border-accent/50"
-              )} onClick={() => formik.setFieldValue('inputType', 'file')}>
-                <RadioGroupItem value="file" id="file" className="sr-only" />
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <Upload className={cn("w-6 h-6", formik.values.inputType === 'file' ? "text-accent" : "text-muted-foreground")} />
-                  <span className="font-medium">PDF Upload</span>
-                </div>
+              <div className="mt-8 p-6 rounded-2xl bg-zinc-900/50 border border-white/5 space-y-4">
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-zinc-500" /> Recommended Improvements
+                </h4>
+                <ul className="space-y-2">
+                  {result.recommendations.map((rec, i) => (
+                    <li key={i} className="text-sm text-zinc-400 flex items-start gap-3">
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0" />
+                      {rec}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </RadioGroup>
-          </div>
-
-          <div className="space-y-6 transition-all duration-300">
-            {formik.values.inputType === 'text' ? (
-              <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
-                <div className="space-y-2">
-                  <Label htmlFor="jobDescriptionText" className="text-sm font-medium">Job Description</Label>
-                  <Textarea
-                    id="jobDescriptionText"
-                    name="jobDescriptionText"
-                    placeholder="Paste the job description here..."
-                    className="min-h-[150px] bg-background/50 border-border focus:border-accent transition-colors"
-                    value={formik.values.jobDescriptionText}
-                    onChange={formik.handleChange}
-                  />
-                  {formik.errors.jobDescriptionText && formik.touched.jobDescriptionText && (
-                    <p className="text-destructive text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {formik.errors.jobDescriptionText}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="resumeText" className="text-sm font-medium">Resume Content</Label>
-                  <Textarea
-                    id="resumeText"
-                    name="resumeText"
-                    placeholder="Paste your resume content here..."
-                    className="min-h-[150px] bg-background/50 border-border focus:border-accent transition-colors"
-                    value={formik.values.resumeText}
-                    onChange={formik.handleChange}
-                  />
-                  {formik.errors.resumeText && formik.touched.resumeText && (
-                    <p className="text-destructive text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {formik.errors.resumeText}</p>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Job Description PDF</Label>
-                  <div className="relative group">
-                    <input
-                      type="file"
-                      id="jobDescriptionFile"
-                      accept=".pdf"
-                      className="hidden"
-                      onChange={(e) => handleFileChange(e, 'jobDescriptionFile')}
-                    />
-                    <label
-                      htmlFor="jobDescriptionFile"
-                      className={cn(
-                        "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all",
-                        formik.values.jobDescriptionFile ? "border-green-500 bg-green-500/5" : "border-border hover:border-accent bg-background/50"
-                      )}
-                    >
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        {formik.values.jobDescriptionFile ? (
-                          <>
-                            <CheckCircle2 className="w-8 h-8 text-green-500 mb-2" />
-                            <p className="text-xs text-green-500 font-medium">{(formik.values.jobDescriptionFile as any).name}</p>
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 text-muted-foreground mb-2 group-hover:text-accent" />
-                            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                            <p className="text-xs text-muted-foreground/60">PDF only</p>
-                          </>
-                        )}
-                      </div>
-                    </label>
-                  </div>
-                  {formik.errors.jobDescriptionFile && (
-                    <p className="text-destructive text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {formik.errors.jobDescriptionFile as string}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Resume PDF</Label>
-                  <div className="relative group">
-                    <input
-                      type="file"
-                      id="resumeFile"
-                      accept=".pdf"
-                      className="hidden"
-                      onChange={(e) => handleFileChange(e, 'resumeFile')}
-                    />
-                    <label
-                      htmlFor="resumeFile"
-                      className={cn(
-                        "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all",
-                        formik.values.resumeFile ? "border-green-500 bg-green-500/5" : "border-border hover:border-accent bg-background/50"
-                      )}
-                    >
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        {formik.values.resumeFile ? (
-                          <>
-                            <CheckCircle2 className="w-8 h-8 text-green-500 mb-2" />
-                            <p className="text-xs text-green-500 font-medium">{(formik.values.resumeFile as any).name}</p>
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 text-muted-foreground mb-2 group-hover:text-accent" />
-                            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                            <p className="text-xs text-muted-foreground/60">PDF only</p>
-                          </>
-                        )}
-                      </div>
-                    </label>
-                  </div>
-                  {formik.errors.resumeFile && (
-                    <p className="text-destructive text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {formik.errors.resumeFile as string}</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full h-12 bg-accent hover:bg-accent/90 text-white font-bold text-lg rounded-xl shadow-lg shadow-accent/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
-          >
-            {isSubmitting ? (
-              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</>
-            ) : (
-              <><Send className="mr-2 h-5 w-5" /> Analyze Application</>
-            )}
-          </Button>
-        </form>
-
-        {apiResponse && (
-          <div className="mt-8 p-4 rounded-xl bg-accent/10 border border-accent/20 animate-in fade-in zoom-in duration-300">
-            <h3 className="text-accent font-bold mb-2 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5" /> API Response Received
-            </h3>
-            <pre className="text-xs text-muted-foreground overflow-auto p-2 bg-black/20 rounded-md">
-              {JSON.stringify(apiResponse, null, 2)}
-            </pre>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
   );
 }
