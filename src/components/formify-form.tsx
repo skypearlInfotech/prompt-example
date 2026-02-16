@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { FileText, Upload, Send, Loader2, AlertCircle, CheckCircle2, TrendingUp, Award, BarChart3 } from 'lucide-react';
+import { FileText, Upload, Loader2, AlertCircle, CheckCircle2, TrendingUp, Award, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -15,13 +15,13 @@ import { cn } from '@/lib/utils';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { scoreResume, type ScoreResumeOutput } from '@/ai/flows/score-resume-flow';
 
 const validationSchema = Yup.object().shape({
   inputType: Yup.string().oneOf(['text', 'file']).required(),
@@ -47,20 +47,10 @@ const validationSchema = Yup.object().shape({
   }),
 });
 
-interface ScoringResult {
-  overallScore: number;
-  categories: {
-    name: string;
-    score: number;
-    feedback: string;
-  }[];
-  recommendations: string[];
-}
-
 export function FormifyForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [result, setResult] = useState<ScoringResult | null>(null);
+  const [result, setResult] = useState<ScoreResumeOutput | null>(null);
 
   const formik = useFormik({
     initialValues: {
@@ -88,25 +78,12 @@ export function FormifyForm() {
           }
         }
 
-        // Simulating AI Analysis and Scoring
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        const aiResult = await scoreResume({
+          resumeText: finalResume,
+          jobDescriptionText: finalJobDescription,
+        });
 
-        const mockResult: ScoringResult = {
-          overallScore: 84,
-          categories: [
-            { name: "Technical Proficiency", score: 92, feedback: "Excellent alignment with stack requirements." },
-            { name: "Experience Level", score: 85, feedback: "Senior roles mentioned match well." },
-            { name: "Educational Background", score: 70, feedback: "Degree matches, but certifications could be improved." },
-            { name: "Soft Skills", score: 88, feedback: "Leadership and teamwork clearly demonstrated." }
-          ],
-          recommendations: [
-            "Add more specific metrics to your previous work achievements.",
-            "Consider highlighting Cloud (AWS/Azure) experience more prominently.",
-            "Update your summary to include the specific keywords found in the JD."
-          ]
-        };
-
-        setResult(mockResult);
+        setResult(aiResult);
         toast({
           title: "Analysis Complete",
           description: "Your resume score has been calculated.",
@@ -115,7 +92,7 @@ export function FormifyForm() {
         toast({
           variant: "destructive",
           title: "Error",
-          description: error.message || "An unexpected error occurred.",
+          description: error.message || "An unexpected error occurred during AI analysis.",
         });
       } finally {
         setIsSubmitting(false);
@@ -158,33 +135,39 @@ export function FormifyForm() {
                 onValueChange={(val) => formik.setFieldValue('inputType', val)}
                 className="flex flex-col sm:flex-row gap-4"
               >
-                <div className={cn(
-                  "flex-1 flex items-center justify-center p-4 rounded-xl border-2 transition-all cursor-pointer",
-                  formik.values.inputType === 'text' ? "border-white bg-white/5 ring-1 ring-white/20" : "border-white/5 hover:border-white/20"
-                )} onClick={() => formik.setFieldValue('inputType', 'text')}>
-                  <RadioGroupItem value="text" id="text" className="sr-only" />
-                  <div className="flex flex-col items-center gap-2 text-center">
+                <div 
+                  onClick={() => formik.setFieldValue('inputType', 'text')}
+                  className={cn(
+                    "flex-1 flex items-center justify-center p-4 rounded-xl border-2 transition-all cursor-pointer",
+                    formik.values.inputType === 'text' ? "border-white bg-white/5 ring-1 ring-white/20" : "border-white/5 hover:border-white/20"
+                  )}
+                >
+                  <RadioGroupItem value="text" id="input-text" className="sr-only" />
+                  <Label htmlFor="input-text" className="flex flex-col items-center gap-2 text-center cursor-pointer">
                     <FileText className={cn("w-6 h-6", formik.values.inputType === 'text' ? "text-white" : "text-zinc-600")} />
                     <span className={cn("font-medium", formik.values.inputType === 'text' ? "text-white" : "text-zinc-600")}>Manual Text</span>
-                  </div>
+                  </Label>
                 </div>
 
-                <div className={cn(
-                  "flex-1 flex items-center justify-center p-4 rounded-xl border-2 transition-all cursor-pointer",
-                  formik.values.inputType === 'file' ? "border-white bg-white/5 ring-1 ring-white/20" : "border-white/5 hover:border-white/20"
-                )} onClick={() => formik.setFieldValue('inputType', 'file')}>
-                  <RadioGroupItem value="file" id="file" className="sr-only" />
-                  <div className="flex flex-col items-center gap-2 text-center">
+                <div 
+                  onClick={() => formik.setFieldValue('inputType', 'file')}
+                  className={cn(
+                    "flex-1 flex items-center justify-center p-4 rounded-xl border-2 transition-all cursor-pointer",
+                    formik.values.inputType === 'file' ? "border-white bg-white/5 ring-1 ring-white/20" : "border-white/5 hover:border-white/20"
+                  )}
+                >
+                  <RadioGroupItem value="file" id="input-file" className="sr-only" />
+                  <Label htmlFor="input-file" className="flex flex-col items-center gap-2 text-center cursor-pointer">
                     <Upload className={cn("w-6 h-6", formik.values.inputType === 'file' ? "text-white" : "text-zinc-600")} />
                     <span className={cn("font-medium", formik.values.inputType === 'file' ? "text-white" : "text-zinc-600")}>PDF Upload</span>
-                  </div>
+                  </Label>
                 </div>
               </RadioGroup>
             </div>
 
             <div className="space-y-6">
               {formik.values.inputType === 'text' ? (
-                <div className="space-y-6 animate-in fade-in duration-500">
+                <div key="text-inputs" className="space-y-6 animate-in fade-in slide-in-from-left-2 duration-300">
                   <div className="space-y-2">
                     <Label htmlFor="jobDescriptionText" className="text-xs font-medium text-zinc-500 uppercase">Job Description</Label>
                     <Textarea
@@ -216,7 +199,7 @@ export function FormifyForm() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-6 animate-in fade-in duration-500">
+                <div key="file-inputs" className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
                   <div className="space-y-2">
                     <Label className="text-xs font-medium text-zinc-500 uppercase">Job Description PDF</Label>
                     <input type="file" id="jobDescriptionFile" accept=".pdf" className="hidden" onChange={(e) => handleFileChange(e, 'jobDescriptionFile')} />
@@ -268,7 +251,7 @@ export function FormifyForm() {
               className="w-full h-14 bg-white hover:bg-zinc-200 text-black font-bold text-lg rounded-xl shadow-xl transition-all hover:scale-[1.01] active:scale-[0.98]"
             >
               {isSubmitting ? (
-                <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Calculating Score...</>
+                <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing with AI...</>
               ) : (
                 <><TrendingUp className="mr-2 h-5 w-5" /> Score Resume</>
               )}
@@ -286,7 +269,7 @@ export function FormifyForm() {
                   <CardTitle className="text-2xl font-bold flex items-center gap-2 justify-center md:justify-start">
                     <Award className="w-6 h-6 text-zinc-400" /> Analysis Result
                   </CardTitle>
-                  <CardDescription>Matching performance across key categories</CardDescription>
+                  <CardDescription>AI-powered matching breakdown</CardDescription>
                 </div>
                 <div className="flex flex-col items-center bg-white/5 px-8 py-4 rounded-2xl border border-white/10">
                   <span className="text-4xl font-black text-white">{result.overallScore}%</span>
@@ -323,13 +306,13 @@ export function FormifyForm() {
 
               <div className="mt-8 p-6 rounded-2xl bg-zinc-900/50 border border-white/5 space-y-4">
                 <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-zinc-500" /> Recommended Improvements
+                  <BarChart3 className="w-4 h-4 text-zinc-500" /> AI Recommendations
                 </h4>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {result.recommendations.map((rec, i) => (
                     <li key={i} className="text-sm text-zinc-400 flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0" />
-                      {rec}
+                      <div className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0" />
+                      <p className="leading-relaxed">{rec}</p>
                     </li>
                   ))}
                 </ul>
