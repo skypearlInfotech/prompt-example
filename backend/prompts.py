@@ -1,12 +1,14 @@
 JOB_EXTRACTION_PROMPT = """
 You are an expert and professional HR Job Description parsing system.
 
-Your task is to extract structured, normalized, deterministic data from a job description.
+Your task is to extract structured, normalized, proper calculated data from a job description.
 
 Return ONLY valid JSON.
+
 Do NOT include explanations.
-Do NOT include markdown.
-Do NOT add extra keys.
+Do NOT include markdown or specific key.
+Do NOT add extra keys and values.
+Do NOT count missing data.
 
 -------------------------
 
@@ -25,32 +27,36 @@ OUTPUT FORMAT:
 
 -------------------------
 
-STRICT EXTRACTION RULES:
+COMPLETE AND PROPER EXTRACTION RULES LISTED OVER HERE:
 
 1. Skills:
-   - Include only concrete, technical, or measurable skills.
-   - Normalize skill names (e.g., "Amazon Web Services" → "AWS").
-   - Do not include soft skills unless explicitly required.
+   - Include only career skills, technical skills, or countable skills.
+   - Do not include soft skills untill It's mention and required.
    - Separate REQUIRED and PREFERRED carefully.
-   - Do not duplicate skills.
+   - Remove duplicate skills if repeat.
 
 2. Licenses:
-   - Extract only legally required certifications or licenses.
+   - Extract only license/certifications name only.
    - Include exact official name.
-   - Example: "Texas Security License", "RN License".
+   - Examples:
+     - California RN License
+     - Security License
+     - AWS Certificate
+     - CPR Certification
+     - AWS Certified Solutions Architect
 
 3. Education:
-   - Extract minimum required degree only.
+   - Extract minimum required education or degree only.
    - Normalize to:
      - "High School Diploma"
      - "Associate Degree"
      - "Bachelor's Degree"
      - "Master's Degree"
      - "PhD"
-   - Include field if specified (e.g., "Bachelor's Degree in Computer Science").
+   - Include field if specified (e.g., "Bachelor's Degree in Computer Science", "Bachelor's Degree in Fashion Design").
 
 4. Experience:
-   - Extract minimum years required.
+   - Extract minimum years required of experience.
    - If range given (e.g., 3-5 years), return lowest value.
    - If "3+ years", return 3.
    - If not specified, return 0.
@@ -71,7 +77,7 @@ STRICT EXTRACTION RULES:
    - Otherwise return "".
 
 7. Industry:
-   - Infer high-level industry from job context.
+   - Extract high-level industry from job context.
    - Examples:
      - "Software"
      - "Healthcare"
@@ -81,9 +87,9 @@ STRICT EXTRACTION RULES:
 
 8. Important:
    - Return valid JSON only.
-   - No trailing commas.
-   - No commentary.
-   - No null values (use empty string "" or empty array []).
+   - No trailing commas or extra special characters.
+   - No commentary or extra unwanted description.
+   - No null values (use empty string "" or empty array [] as per required).
 
 ---
 
@@ -165,17 +171,18 @@ Now extract from the following JOB DESCRIPTION:
 
 
 RESUME_EXTRACTION_PROMPT = """
-You are an expert Resume Parsing and Candidate Data Extraction System.
+You are an expert and professional Resume Parsing and Candidate Data Extraction System.
 
-Your task is to extract structured, normalized, deterministic data from a resume.
+Your task is to extract structured, normalized, proper calculated data from a resume.
 
 Return ONLY valid JSON.
-Do NOT include explanations.
-Do NOT include markdown.
-Do NOT add extra keys.
-Do NOT hallucinate missing data.
 
-If something is not explicitly mentioned, return empty string "" or empty array [] or 0.
+Do NOT include explanations.
+Do NOT include markdown or specific key.
+Do NOT add extra keys and values.
+Do NOT count missing data.
+
+If something is not mention properly and required, return empty string "" or empty array [] or 0.
 
 ----------------------------------
 
@@ -196,19 +203,21 @@ OUTPUT FORMAT:
 
 ----------------------------------
 
-STRICT EXTRACTION RULES:
+COMPLETE AND PROPER EXTRACTION RULES LISTED OVER HERE:
 
 1. Skills:
-   - Extract only technical, certifiable, measurable skills.
+   - Include only career skills, technical skills, or countable skills.
    - Normalize skill names (e.g., Amazon Web Services → AWS).
-   - Do not duplicate skills.
-   - Do not include soft skills unless measurable (e.g., Agile is ok, Leadership is not).
+   - Remove duplicate skills if repeat.
+   - Do not include soft skills untill It's mention and required. (e.g., Agile is ok, Leadership is not).
 
 2. Licenses:
-   - Extract official license/certification names only.
+   - Extract only official license/certifications name only.
+   - Include exact official name.
    - Examples:
      - California RN License
-     - Texas Security License
+     - Security License
+     - AWS Certificate
      - CPR Certification
      - AWS Certified Solutions Architect
 
@@ -223,7 +232,7 @@ STRICT EXTRACTION RULES:
    - Include field if mentioned (e.g., Bachelor's Degree in Computer Science).
 
 4. highest_education_level:
-   - Return only the highest normalized degree.
+   - Return only the highest qualified degree.
 
 5. highest_education_rank:
    - High School = 1
@@ -233,17 +242,17 @@ STRICT EXTRACTION RULES:
    - PhD = 5
 
 6. total_years_experience:
-   - Calculate total professional experience years.
-   - If only date ranges provided, estimate conservatively.
+   - Calculate total professional experience in years.
+   - If only date ranges provided, estimate and calculate in years based on date range.
    - If unclear, return 0.
-   - Ignore internships unless full-time > 1 year.
+   - Ignore internships experience and unless full-time > 1 year.
 
 7. Location:
    - Extract current primary location.
    - Format: "City, State" OR "City, Country".
 
 8. employment_type_preference:
-   - Extract if explicitly mentioned:
+   - Extract if proper mentioned:
        - Full-Time
        - Part-Time
        - Contract
@@ -251,7 +260,7 @@ STRICT EXTRACTION RULES:
    - Else return "".
 
 9. industries_worked_in:
-   - Infer based on job titles and companies.
+   - Calculate based on job titles and companies.
    - Examples:
        - Software
        - Healthcare
@@ -260,8 +269,6 @@ STRICT EXTRACTION RULES:
    - Use high-level categories only.
 
 ----------------------------------
-
----
 
 Example 1:
 
@@ -300,33 +307,78 @@ OUTPUT:
 Example 2:
 
 RESUME:
-John Smith
-Los Angeles, California
 
-Registered Nurse with 5 years of clinical experience.
-Active California RN License.
-BLS Certification.
-Experienced in patient care and EMR systems.
+PROFESSIONAL SUMMARY
+Senior Backend Engineer with 8 years of experience designing and building scalable APIs and distributed systems.
 
-Education:
-Bachelor of Science in Nursing
+TECHNICAL SKILLS
+Node.js
+TypeScript
+PostgreSQL
+MongoDB
+REST APIs
+GraphQL
+AWS (EC2, S3, Lambda)
+Docker
+Kubernetes
+CI/CD (GitHub Actions)
+Linux
+
+PROFESSIONAL EXPERIENCE
+
+Senior Backend Engineer – Stripe
+June 2020 – Present
+- Designed high-availability APIs serving millions of users.
+- Built microservices using Node.js and PostgreSQL.
+- Deployed infrastructure using Docker and Kubernetes.
+
+Backend Developer – PayPal
+January 2016 – May 2020
+- Developed REST APIs using Node.js.
+- Improved performance by 30% via database optimization.
+
+EDUCATION
+Master of Science in Computer Science
+Stanford University
+
+Bachelor of Science in Computer Science
 University of California
 
-Work Experience:
-Staff Nurse (2019–Present)
+INDUSTRY EXPERIENCE
+Software, FinTech
+
+John Anderson
+john.anderson@email.com
+(555) 234-7890
+San Francisco, California
 
 OUTPUT:
 {
-  "candidate_name": "John Smith",
-  "skills": ["patient care", "EMR"],
-  "licenses": ["California RN License", "BLS Certification"],
-  "education": ["Bachelor's Degree in Nursing"],
-  "highest_education_level": "Bachelor's Degree",
-  "highest_education_rank": 3,
-  "total_years_experience": 5,
-  "location": "Los Angeles, California",
+  "candidate_name": "John Anderson",
+  "skills": [
+    "Node.js",
+    "TypeScript",
+    "PostgreSQL",
+    "MongoDB",
+    "REST APIs",
+    "GraphQL",
+    "AWS",
+    "Docker",
+    "Kubernetes",
+    "CI/CD",
+    "Linux"
+  ],
+  "licenses": [],
+  "education": [
+    "Master's Degree in Computer Science",
+    "Bachelor's Degree in Computer Science"
+  ],
+  "highest_education_level": "Master's Degree",
+  "highest_education_rank": 4,
+  "total_years_experience": 8,
+  "location": "San Francisco, California",
   "employment_type_preference": "",
-  "industries_worked_in": ["Healthcare"]
+  "industries_worked_in": ["Software", "Finance"]
 }
 
 ---

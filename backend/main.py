@@ -7,14 +7,13 @@ from typing import List
 
 app = FastAPI()
 
-# ✅ Add this
 origins = [
-    "http://localhost:9002",  # React default
+    "http://localhost:9002",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,      # OR ["*"] for development only
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,7 +27,6 @@ class AnalyzeRequest(BaseModel):
 def analyze(data: AnalyzeRequest):
 
     job_data = extract_job_data(data.job_description)
-    # resume_data = extract_resume_data(data.resumes)
     resume_objects = []
     for resume_text in data.resumes:
         resume_data = extract_resume_data(resume_text)
@@ -43,61 +41,3 @@ def analyze(data: AnalyzeRequest):
         "resume_extracted": resume_objects,
         "analysis": result
     }
-    # return {
-    #     "job_extracted": {
-    #         "required_skills": [
-    #             "SQL",
-    #             "Python",
-    #             "Tableau",
-    #             "financial data modeling"
-    #         ],
-    #         "preferred_skills": [
-    #             "Power BI",
-    #             "Snowflake"
-    #         ],
-    #         "required_licenses": [],
-    #         "education_requirement": "Bachelor's Degree in Statistics",
-    #         "minimum_years_experience": 4,
-    #         "location_requirement": "Hybrid - New York",
-    #         "employment_type": "Full-Time",
-    #         "industry": "Finance"
-    #     },
-    #     "resume_extracted": {
-    #         "candidate_name": "Emily Johnson",
-    #         "skills": [
-    #             "SQL",
-    #             "Python",
-    #             "Tableau",
-    #             "Power BI",
-    #             "Data Modeling",
-    #             "Excel"
-    #         ],
-    #         "licenses": [],
-    #         "education": [
-    #             "Bachelor's Degree in Statistics"
-    #         ],
-    #         "highest_education_level": "Bachelor's Degree",
-    #         "highest_education_rank": 3,
-    #         "total_years_experience": 5,
-    #         "location": "New York, NY",
-    #         "employment_type_preference": "",
-    #         "industries_worked_in": [
-    #             "Finance"
-    #         ]
-    #     },
-    #     "analysis": {
-    #         "score": 82.5,
-    #         "strengths": [
-    #             "Matched required skills: ['sql', 'python', 'tableau']",
-    #             "Matched preferred skills: ['power bi']",
-    #             "Meets or exceeds experience requirement",
-    #             "Education meets requirement",
-    #             "Industry experience match"
-    #         ],
-    #         "gaps": [
-    #             "Missing required skills: ['financial data modeling']",
-    #             "Location mismatch"
-    #         ],
-    #         "reasoning": "Score calculated using weighted deterministic scoring model with proportional experience, normalized skills, strict license validation, and education rank comparison."
-    #     }
-    # }

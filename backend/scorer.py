@@ -103,7 +103,7 @@ def calculate_score(job, resumes):
 
             if missing_license:
                 gaps.append(f"Missing required licenses: {missing_license}")
-                score = min(score, 50)  # Disqualification cap
+                score = min(score, 50)
             else:
                 score += 10
                 strengths.append("All required licenses present")
@@ -146,7 +146,7 @@ def calculate_score(job, resumes):
             "score": round(score, 2),
             "strengths": strengths,
             "gaps": gaps,
-            "reasoning": "Score calculated using weighted deterministic scoring model with proportional experience, normalized skills, strict license validation, and education rank comparison.",
+            "reasoning": "Score calculated using Weighted Deterministic Scoring model with experience, skills and license/certificate validation. Also, education rank comparison added.",
         })
 
     return resume_scores_result

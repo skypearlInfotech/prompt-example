@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { extractTextFromPdf } from '@/lib/pdf-parser';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -43,6 +44,7 @@ export function FormifyForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [selectedResume, setSelectedResume] = useState<any>(null);
 
   const formik = useFormik({
     initialValues: {
@@ -320,9 +322,83 @@ export function FormifyForm() {
           </CardContent>
         </Card>
       )}
-
+      {console.log('result ==>', result)}
       {result && (
         <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-700">
+          {/* Job Summary Section */}
+          {result?.job_extracted && (
+            <Card className="border-white/10 bg-zinc-950 shadow-2xl overflow-hidden">
+              <CardHeader className="bg-white/[0.02] border-b border-white/5">
+                <CardTitle className="text-2xl font-bold text-white">Job Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <tbody className="divide-y divide-white/5">
+                      <tr className="hover:bg-white/[0.02]">
+                        <td className="py-3 px-4 text-sm font-medium text-zinc-400 w-1/3">Required Skills</td>
+                        <td className="py-3 px-4">
+                          <div className="flex flex-wrap gap-2">
+                            {result.job_extracted.required_skills?.map((skill: string, i: number) => (
+                              <span key={i} className="px-3 py-1 text-xs rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-white/[0.02]">
+                        <td className="py-3 px-4 text-sm font-medium text-zinc-400">Preferred Skills</td>
+                        <td className="py-3 px-4">
+                          <div className="flex flex-wrap gap-2">
+                            {result.job_extracted.preferred_skills?.length > 0 ? (
+                              result.job_extracted.preferred_skills.map((skill: string, i: number) => (
+                                <span key={i} className="px-3 py-1 text-xs rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                  {skill}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-sm text-zinc-500">None</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-white/[0.02]">
+                        <td className="py-3 px-4 text-sm font-medium text-zinc-400">Required Licenses/Certifications</td>
+                        <td className="py-3 px-4">
+                          <div className="flex flex-wrap gap-2">
+                            {result.job_extracted.required_licenses?.length > 0 ? (
+                              result.job_extracted.required_licenses.map((license: string, i: number) => (
+                                <span key={i} className="px-3 py-1 text-xs rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                  {license}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-sm text-zinc-500">None</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-white/[0.02]">
+                        <td className="py-3 px-4 text-sm font-medium text-zinc-400">Education Requirement</td>
+                        <td className="py-3 px-4 text-sm text-zinc-300">{result.job_extracted.education_requirement || 'Not specified'}</td>
+                      </tr>
+                      <tr className="hover:bg-white/[0.02]">
+                        <td className="py-3 px-4 text-sm font-medium text-zinc-400">Minimum Years of Experience</td>
+                        <td className="py-3 px-4 text-sm text-zinc-300">{result.job_extracted.minimum_years_experience || 'Not specified'}</td>
+                      </tr>
+                      <tr className="hover:bg-white/[0.02]">
+                        <td className="py-3 px-4 text-sm font-medium text-zinc-400">Location/State Requirements</td>
+                        <td className="py-3 px-4 text-sm text-zinc-300">{result.job_extracted.location_requirement || 'Not specified'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Analysis Results Section */}
           <Card className="border-white/10 bg-zinc-950 shadow-2xl overflow-hidden">
               {result?.analysis?.length && (
                 <>
@@ -335,6 +411,15 @@ export function FormifyForm() {
                             <Award className="w-6 h-6 text-zinc-400" /> Analysis Result of {resultItem.candidate}
                           </CardTitle>
                         </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedResume(result.resume_extracted?.[index])}
+                          className="border-white/20 hover:bg-white/10 text-white"
+                        >
+                          Preview Resume
+                        </Button>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-8">
@@ -460,6 +545,79 @@ export function FormifyForm() {
                 <TrendingUp className="mr-2 h-5 w-5" /> Start new analyze
               </Button>
           </Card>
+
+          {/* Resume Preview Modal */}
+          <Dialog open={!!selectedResume} onOpenChange={() => setSelectedResume(null)}>
+            <DialogContent className="max-w-2xl bg-zinc-950 border-white/10 text-white max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold">Resume Summary - {selectedResume?.candidate_name}</DialogTitle>
+              </DialogHeader>
+              {selectedResume && (
+                <div className="space-y-4 mt-4">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <tbody className="divide-y divide-white/5">
+                        <tr className="hover:bg-white/[0.02]">
+                          <td className="py-3 px-4 text-sm font-medium text-zinc-400 w-1/3">Candidate Name</td>
+                          <td className="py-3 px-4 text-sm text-zinc-300">{selectedResume.candidate_name}</td>
+                        </tr>
+                        <tr className="hover:bg-white/[0.02]">
+                          <td className="py-3 px-4 text-sm font-medium text-zinc-400">Skills</td>
+                          <td className="py-3 px-4">
+                            <div className="flex flex-wrap gap-2">
+                              {selectedResume.skills?.map((skill: string, i: number) => (
+                                <span key={i} className="px-3 py-1 text-xs rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-white/[0.02]">
+                          <td className="py-3 px-4 text-sm font-medium text-zinc-400">Licenses/Certifications</td>
+                          <td className="py-3 px-4">
+                            {selectedResume.licenses?.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {selectedResume.licenses.map((license: string, i: number) => (
+                                  <span key={i} className="px-3 py-1 text-xs rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                    {license}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-zinc-500">None</span>
+                            )}
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-white/[0.02]">
+                          <td className="py-3 px-4 text-sm font-medium text-zinc-400">Education</td>
+                          <td className="py-3 px-4">
+                            {selectedResume.education?.length > 0 ? (
+                              <div className="space-y-1">
+                                {selectedResume.education.map((edu: string, i: number) => (
+                                  <div key={i} className="text-sm text-zinc-300">{edu}</div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-zinc-500">Not specified</span>
+                            )}
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-white/[0.02]">
+                          <td className="py-3 px-4 text-sm font-medium text-zinc-400">Years of Experience</td>
+                          <td className="py-3 px-4 text-sm text-zinc-300">{selectedResume.total_years_experience || 'Not specified'}</td>
+                        </tr>
+                        <tr className="hover:bg-white/[0.02]">
+                          <td className="py-3 px-4 text-sm font-medium text-zinc-400">Location</td>
+                          <td className="py-3 px-4 text-sm text-zinc-300">{selectedResume.location || 'Not specified'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       )}
     </div>
