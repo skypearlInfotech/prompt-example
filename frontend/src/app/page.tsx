@@ -10,7 +10,7 @@ export default function Home() {
       <div className="z-10 w-full max-w-4xl space-y-12">
         <header className="text-center space-y-4 animate-fade-in">
           <h1 className="text-5xl sm:text-7xl font-headline font-black text-white tracking-tighter">
-            Resume Analyze System
+            Generic AI Resume Scoring System
           </h1>
         </header>
 

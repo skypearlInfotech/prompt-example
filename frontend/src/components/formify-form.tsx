@@ -246,7 +246,7 @@ export function FormifyForm() {
                 {isSubmitting ? (
                   <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing with AI...</>
                 ) : (
-                  <><TrendingUp className="mr-2 h-5 w-5" /> Click to start analyze</>
+                  <><TrendingUp className="mr-2 h-5 w-5" /> Analyze</>
                 )}
               </Button>
             </form>

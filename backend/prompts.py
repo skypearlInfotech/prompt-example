@@ -1,5 +1,5 @@
 JOB_EXTRACTION_PROMPT = """
-You are an expert HR Job Description parsing system.
+You are an expert and professional HR Job Description parsing system.
 
 Your task is to extract structured, normalized, deterministic data from a job description.
 

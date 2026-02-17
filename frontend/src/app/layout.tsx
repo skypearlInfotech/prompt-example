@@ -2,8 +2,8 @@ import type {Metadata} from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Resume Analyze System',
-  description: 'Resume Analyze System',
+  title: 'Generic AI Resume Scoring System',
+  description: 'Generic AI Resume Scoring System',
 };
 
 export default function RootLayout({
