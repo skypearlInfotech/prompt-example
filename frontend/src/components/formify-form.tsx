@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { FileText, Upload, Loader2, AlertCircle, CheckCircle2, TrendingUp, Award } from 'lucide-react';
+import { FileText, Upload, Loader2, AlertCircle, CheckCircle2, TrendingUp, Award, X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -22,9 +22,9 @@ const validationSchema = Yup.object().shape({
     then: (schema) => schema.required('Job description is required'),
     otherwise: (schema) => schema.notRequired(),
   }),
-  resumeText: Yup.string().when('inputType', {
+  resumeTexts: Yup.array().when('inputType', {
     is: 'text',
-    then: (schema) => schema.required('Resume text is required'),
+    then: (schema) => schema.of(Yup.string().required()).min(1, 'At least one resume is required'),
     otherwise: (schema) => schema.notRequired(),
   }),
   jobDescriptionFile: Yup.mixed().when('inputType', {
@@ -32,9 +32,9 @@ const validationSchema = Yup.object().shape({
     then: (schema) => schema.required('Job description PDF is required'),
     otherwise: (schema) => schema.notRequired(),
   }),
-  resumeFile: Yup.mixed().when('inputType', {
+  resumeFiles: Yup.array().when('inputType', {
     is: 'file',
-    then: (schema) => schema.required('Resume PDF is required'),
+    then: (schema) => schema.min(1, 'At least one resume PDF is required'),
     otherwise: (schema) => schema.notRequired(),
   }),
 });
@@ -48,9 +48,9 @@ export function FormifyForm() {
     initialValues: {
       inputType: 'text',
       jobDescriptionText: '',
-      resumeText: '',
+      resumeTexts: [''],
       jobDescriptionFile: null as File | null,
-      resumeFile: null as File | null,
+      resumeFiles: [] as File[],
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -58,22 +58,25 @@ export function FormifyForm() {
       setResult(null);
       try {
         let finalJobDescription = values.jobDescriptionText;
-        let finalResume = values.resumeText;
+        let finalResumes: string[] = [];
 
         if (values.inputType === 'file') {
           toast({ title: "Processing PDFs", description: "Analyzing your files..." });
           if (values.jobDescriptionFile) {
             finalJobDescription = await extractTextFromPdf(values.jobDescriptionFile);
           }
-          if (values.resumeFile) {
-            finalResume = await extractTextFromPdf(values.resumeFile);
+          for (const file of values.resumeFiles) {
+            const text = await extractTextFromPdf(file);
+            finalResumes.push(text);
           }
+        } else {
+          finalResumes = values.resumeTexts.filter(text => text.trim());
         }
 
         const response = await axios.post(
           "http://localhost:8000/analyze",
           {
-            resumes: [finalResume],
+            resumes: finalResumes,
             job_description: finalJobDescription,
           }
         );
@@ -106,6 +109,19 @@ export function FormifyForm() {
       return;
     }
     formik.setFieldValue(fieldName, file);
+  };
+
+  const handleMultipleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const pdfFiles = files.filter(f => f.type === 'application/pdf');
+    if (pdfFiles.length !== files.length) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Files",
+        description: "Only PDF files are allowed.",
+      });
+    }
+    formik.setFieldValue('resumeFiles', [...formik.values.resumeFiles, ...pdfFiles]);
   };
 
   return (
@@ -177,17 +193,48 @@ export function FormifyForm() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="resumeText" className="text-xs font-medium text-zinc-500 uppercase">Resume Content</Label>
-                      <Textarea
-                        id="resumeText"
-                        name="resumeText"
-                        placeholder="Paste your resume content here..."
-                        className="min-h-[120px] bg-black border-white/10 focus:border-white transition-colors text-white"
-                        value={formik.values.resumeText}
-                        onChange={formik.handleChange}
-                      />
-                      {formik.errors.resumeText && formik.touched.resumeText && (
-                        <p className="text-red-500 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {formik.errors.resumeText}</p>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium text-zinc-500 uppercase">Resume Content</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => formik.setFieldValue('resumeTexts', [...formik.values.resumeTexts, ''])}
+                          className="text-zinc-400 hover:text-white"
+                        >
+                          <Plus className="w-4 h-4 mr-1" /> Add Resume
+                        </Button>
+                      </div>
+                      {formik.values.resumeTexts.map((text, idx) => (
+                        <div key={idx} className="relative">
+                          <Textarea
+                            placeholder={`Paste resume ${idx + 1} content here...`}
+                            className="min-h-[120px] bg-black border-white/10 focus:border-white transition-colors text-white pr-10"
+                            value={text}
+                            onChange={(e) => {
+                              const newTexts = [...formik.values.resumeTexts];
+                              newTexts[idx] = e.target.value;
+                              formik.setFieldValue('resumeTexts', newTexts);
+                            }}
+                          />
+                          {formik.values.resumeTexts.length > 1 && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="absolute top-2 right-2 text-zinc-500 hover:text-red-400"
+                              onClick={() => {
+                                const newTexts = formik.values.resumeTexts.filter((_, i) => i !== idx);
+                                formik.setFieldValue('resumeTexts', newTexts);
+                              }}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      {formik.errors.resumeTexts && formik.touched.resumeTexts && (
+                        <p className="text-red-500 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {formik.errors.resumeTexts as string}</p>
                       )}
                     </div>
                   </div>
@@ -215,24 +262,44 @@ export function FormifyForm() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-medium text-zinc-500 uppercase">Resume PDF</Label>
-                      <input type="file" id="resumeFile" accept=".pdf" className="hidden" onChange={(e) => handleFileChange(e, 'resumeFile')} />
-                      <label htmlFor="resumeFile" className={cn(
+                      <Label className="text-xs font-medium text-zinc-500 uppercase">Resume PDFs</Label>
+                      <input type="file" id="resumeFiles" accept=".pdf" multiple className="hidden" onChange={handleMultipleFilesChange} />
+                      <label htmlFor="resumeFiles" className={cn(
                         "flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all",
-                        formik.values.resumeFile ? "border-zinc-400 bg-white/5" : "border-white/5 hover:border-white/20 bg-black"
+                        formik.values.resumeFiles.length > 0 ? "border-zinc-400 bg-white/5" : "border-white/5 hover:border-white/20 bg-black"
                       )}>
-                        {formik.values.resumeFile ? (
-                          <div className="flex items-center gap-2 text-zinc-300">
-                            <CheckCircle2 className="w-5 h-5 text-zinc-400" />
-                            <span className="text-sm">{(formik.values.resumeFile as any).name}</span>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center gap-1">
-                            <Upload className="w-6 h-6 text-zinc-600" />
-                            <p className="text-xs text-zinc-500">Upload Resume PDF</p>
-                          </div>
-                        )}
+                        <div className="flex flex-col items-center gap-1">
+                          <Upload className="w-6 h-6 text-zinc-600" />
+                          <p className="text-xs text-zinc-500">{formik.values.resumeFiles.length > 0 ? `${formik.values.resumeFiles.length} file(s) selected` : 'Upload Resume PDFs'}</p>
+                        </div>
                       </label>
+                      {formik.values.resumeFiles.length > 0 && (
+                        <div className="space-y-2 mt-2">
+                          {formik.values.resumeFiles.map((file, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-zinc-900/40 p-2 rounded-lg">
+                              <div className="flex items-center gap-2 text-zinc-300">
+                                <CheckCircle2 className="w-4 h-4 text-zinc-400" />
+                                <span className="text-sm">{file.name}</span>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="text-zinc-500 hover:text-red-400 h-6 w-6 p-0"
+                                onClick={() => {
+                                  const newFiles = formik.values.resumeFiles.filter((_, i) => i !== idx);
+                                  formik.setFieldValue('resumeFiles', newFiles);
+                                }}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {formik.errors.resumeFiles && formik.touched.resumeFiles && (
+                        <p className="text-red-500 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {formik.errors.resumeFiles as string}</p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -259,8 +326,8 @@ export function FormifyForm() {
           <Card className="border-white/10 bg-zinc-950 shadow-2xl overflow-hidden">
               {result?.analysis?.length && (
                 <>
-                  {result?.analysis?.map((resultItem: any) =>(
-                    <>
+                  {result?.analysis?.map((resultItem: any, index: number) =>(
+                    <div key={`key-${index}`}>
                       <CardHeader className="bg-white/[0.02] border-b border-white/5 pb-8">
                       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="space-y-1 text-center md:text-left">
@@ -378,7 +445,7 @@ export function FormifyForm() {
 
                       </div>
                     </CardContent>
-                    </>
+                    </div>
                   ))}
                 </>
               )}
@@ -387,6 +454,7 @@ export function FormifyForm() {
                 className="w-full h-14 bg-white hover:bg-zinc-200 text-black font-bold text-lg rounded-xl shadow-xl transition-all hover:scale-[1.01] active:scale-[0.98]"
                 onClick={()=>{
                   setResult(null);
+                  formik.resetForm();
                 }}
               >
                 <TrendingUp className="mr-2 h-5 w-5" /> Start new analyze
