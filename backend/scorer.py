@@ -142,6 +142,7 @@ def calculate_score(job, resumes):
         score = min(score, 100)
 
         resume_scores_result.append({
+            "candidate": resume.get("candidate_name", ""),
             "score": round(score, 2),
             "strengths": strengths,
             "gaps": gaps,

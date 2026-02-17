@@ -73,7 +73,7 @@ export function FormifyForm() {
         const response = await axios.post(
           "http://localhost:8000/analyze",
           {
-            resume: finalResume,
+            resumes: [finalResume],
             job_description: finalJobDescription,
           }
         );
@@ -257,125 +257,131 @@ export function FormifyForm() {
       {result && (
         <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-700">
           <Card className="border-white/10 bg-zinc-950 shadow-2xl overflow-hidden">
-            <CardHeader className="bg-white/[0.02] border-b border-white/5 pb-8">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="space-y-1 text-center md:text-left">
-                  <CardTitle className="text-2xl font-bold flex items-center gap-2 justify-center md:justify-start">
-                    <Award className="w-6 h-6 text-zinc-400" /> Analysis Result
-                  </CardTitle>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-8">
-              {result?.analysis && (
-                <div className="space-y-8">
-
-                  {/* ================= OVERALL SCORE ================= */}
-                  <div className="flex items-center justify-between bg-zinc-900/40 p-6 rounded-xl border border-white/5">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">
-                        Overall Match Score
-                      </h3>
-                      <p className="text-sm text-zinc-400 mt-1 max-w-xl">
-                        {result.analysis.reasoning}
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="text-4xl font-bold text-white">
-                        {result.analysis.score}%
+              {result?.analysis?.length && (
+                <>
+                  {result?.analysis?.map((resultItem: any) =>(
+                    <>
+                      <CardHeader className="bg-white/[0.02] border-b border-white/5 pb-8">
+                      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="space-y-1 text-center md:text-left">
+                          <CardTitle className="text-2xl font-bold flex items-center gap-2 justify-center md:justify-start">
+                            <Award className="w-6 h-6 text-zinc-400" /> Analysis Result of {resultItem.candidate}
+                          </CardTitle>
+                        </div>
                       </div>
-                      <Progress
-                        value={result.analysis.score}
-                        className="h-2 mt-3 bg-zinc-800"
-                      />
-                    </div>
-                  </div>
+                    </CardHeader>
+                    <CardContent className="pt-8">
+                      <div className="space-y-8">
 
-                  {/* ================= STRENGTHS SECTION ================= */}
-                  <div className="bg-zinc-900/30 p-6 rounded-xl border border-emerald-500/10">
-                    <h4 className="text-emerald-400 font-semibold mb-4 text-lg">
-                      Strengths
-                    </h4>
+                        {/* ================= OVERALL SCORE ================= */}
+                        <div className="flex items-center justify-between bg-zinc-900/40 p-6 rounded-xl border border-white/5">
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">
+                              Overall Match Score 
+                            </h3>
+                            <p className="text-sm text-zinc-400 mt-1 max-w-xl">
+                              {resultItem.reasoning}
+                            </p>
+                          </div>
 
-                    <div className="space-y-4">
-                      {result.analysis.strengths.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-zinc-950/60 p-4 rounded-lg border border-emerald-500/10"
-                        >
-                          <p className="text-sm text-zinc-300 mb-2">
-                            {item.split(":")[0]}
-                          </p>
+                          <div className="text-right">
+                            <div className="text-4xl font-bold text-white">
+                              {resultItem.score}%
+                            </div>
+                            <Progress
+                              value={resultItem.score}
+                              className="h-2 mt-3 bg-zinc-800"
+                            />
+                          </div>
+                        </div>
 
-                          {/* Extract skills inside brackets */}
-                          {item.includes("[") && (
-                            <div className="flex flex-wrap gap-2">
-                              {item
-                                .match(/\[(.*?)\]/)?.[1]
-                                .replace(/'/g, "")
-                                .split(",")
-                                .map((skill, i) => (
-                                  <span
-                                    key={i}
-                                    className="px-3 py-1 text-xs rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                  >
-                                    {skill.trim()}
-                                  </span>
-                                ))}
+                        {/* ================= STRENGTHS SECTION ================= */}
+                        <div className="bg-zinc-900/30 p-6 rounded-xl border border-emerald-500/10">
+                          <h4 className="text-emerald-400 font-semibold mb-4 text-lg">
+                            Strengths
+                          </h4>
+
+                          <div className="space-y-4">
+                            {resultItem.strengths.map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="bg-zinc-950/60 p-4 rounded-lg border border-emerald-500/10"
+                              >
+                                <p className="text-sm text-zinc-300 mb-2">
+                                  {item.split(":")[0]}
+                                </p>
+
+                                {/* Extract skills inside brackets */}
+                                {item.includes("[") && (
+                                  <div className="flex flex-wrap gap-2">
+                                    {item
+                                      .match(/\[(.*?)\]/)?.[1]
+                                      .replace(/'/g, "")
+                                      .split(",")
+                                      .map((skill, i) => (
+                                        <span
+                                          key={i}
+                                          className="px-3 py-1 text-xs rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                        >
+                                          {skill.trim()}
+                                        </span>
+                                      ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* ================= GAPS SECTION ================= */}
+                        <div className="bg-zinc-900/30 p-6 rounded-xl border border-red-500/10">
+                          <h4 className="text-red-400 font-semibold mb-4 text-lg">
+                            Gaps Identified
+                          </h4>
+
+                          {resultItem.gaps.length === 0 ? (
+                            <p className="text-sm text-emerald-400">
+                              No major gaps identified 🎉
+                            </p>
+                          ) : (
+                            <div className="space-y-4">
+                              {resultItem.gaps.map((item, idx) => (
+                                <div
+                                  key={idx}
+                                  className="bg-zinc-950/60 p-4 rounded-lg border border-red-500/10"
+                                >
+                                  <p className="text-sm text-zinc-300 mb-2">
+                                    {item.split(":")[0]}
+                                  </p>
+
+                                  {item.includes("[") && (
+                                    <div className="flex flex-wrap gap-2">
+                                      {item
+                                        .match(/\[(.*?)\]/)?.[1]
+                                        .replace(/'/g, "")
+                                        .split(",")
+                                        .map((skill, i) => (
+                                          <span
+                                            key={i}
+                                            className="px-3 py-1 text-xs rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
+                                          >
+                                            {skill.trim()}
+                                          </span>
+                                        ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  </div>
 
-                  {/* ================= GAPS SECTION ================= */}
-                  <div className="bg-zinc-900/30 p-6 rounded-xl border border-red-500/10">
-                    <h4 className="text-red-400 font-semibold mb-4 text-lg">
-                      Gaps Identified
-                    </h4>
-
-                    {result.analysis.gaps.length === 0 ? (
-                      <p className="text-sm text-emerald-400">
-                        No major gaps identified 🎉
-                      </p>
-                    ) : (
-                      <div className="space-y-4">
-                        {result.analysis.gaps.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="bg-zinc-950/60 p-4 rounded-lg border border-red-500/10"
-                          >
-                            <p className="text-sm text-zinc-300 mb-2">
-                              {item.split(":")[0]}
-                            </p>
-
-                            {item.includes("[") && (
-                              <div className="flex flex-wrap gap-2">
-                                {item
-                                  .match(/\[(.*?)\]/)?.[1]
-                                  .replace(/'/g, "")
-                                  .split(",")
-                                  .map((skill, i) => (
-                                    <span
-                                      key={i}
-                                      className="px-3 py-1 text-xs rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
-                                    >
-                                      {skill.trim()}
-                                    </span>
-                                  ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
                       </div>
-                    )}
-                  </div>
-
-                </div>
+                    </CardContent>
+                    </>
+                  ))}
+                </>
               )}
-            </CardContent>
             <Button
                 type="button"
                 className="w-full h-14 bg-white hover:bg-zinc-200 text-black font-bold text-lg rounded-xl shadow-xl transition-all hover:scale-[1.01] active:scale-[0.98]"
